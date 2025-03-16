@@ -29,8 +29,8 @@ if break_button:
 if uploaded_file:
     # Utiliser le même nom de fichier que celui importé
     SAVE_FILE = uploaded_file.name
-    # with open(SAVE_FILE, "wb") as f:
-    #     f.write(uploaded_file.getbuffer())  # Écrasement du fichier existant
+    with open(SAVE_FILE, "wb") as f:
+        f.write(uploaded_file.getbuffer())  # Écrasement du fichier existant
     st.success(f"💾 Le fichier {SAVE_FILE} a été chargé et sauvegardé.")
 
 # 📂 Charger les données depuis le fichier de sauvegarde
