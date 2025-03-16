@@ -25,10 +25,12 @@ if break_button:
         st.subheader("📑 Données coupures")
         st.table(injuries_df)
 
-# 📌 Si un fichier est importé, on l’enregistre sous "perf_weighted_vest2.xlsx"
+# 📌 Si un fichier est importé, on l’enregistre sous "performance.xlsx"
 if uploaded_file:
-    with open(SAVE_FILE, "wb") as f:
-        f.write(uploaded_file.getbuffer())  # Écrasement du fichier existant
+    # Utiliser le même nom de fichier que celui importé
+    SAVE_FILE = uploaded_file.name
+    # with open(SAVE_FILE, "wb") as f:
+    #     f.write(uploaded_file.getbuffer())  # Écrasement du fichier existant
     st.success(f"💾 Le fichier {SAVE_FILE} a été chargé et sauvegardé.")
 
 # 📂 Charger les données depuis le fichier de sauvegarde
@@ -44,7 +46,6 @@ if os.path.exists(SAVE_FILE):
     tab1, tab2 = st.tabs(["💾 Enregistre tes performances", "📈 Visualise tes performances"])
 
     with tab1:
-        # st.subheader("➕ nouvelle performance")
 
         # 🔄 Charger les performances sauvegardées
         xls = pd.ExcelFile(SAVE_FILE)
@@ -92,7 +93,32 @@ if os.path.exists(SAVE_FILE):
 
                 st.success("✅ Performance enregistrée avec succès !")
 
-        # 📊 Affichage des performances mises à jour
+        # Vérifier si le fichier existe avant d'afficher le bouton de téléchargement
+        if os.path.exists(SAVE_FILE):
+            with open(SAVE_FILE, "rb") as file:
+                st.download_button(
+                    label="📥 Télécharger le fichier Excel",
+                    data=file,
+                    file_name=SAVE_FILE,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+
+        # # 📊 Affichage des performances mises à jour
+        # st.subheader("📊 Historique des performances")
+
+        # Vérifier si les colonnes existent dans df_saved avant d'appliquer les modifications
+        if "Kg" in df_saved.columns:
+            df_saved["Kg"] = pd.to_numeric(df_saved["Kg"], errors="coerce").round(1)
+
+        series_columns = ["S1", "S2", "S3", "S4"]
+        for col in series_columns:
+            if col in df_saved.columns:
+                df_saved[col] = pd.to_numeric(df_saved[col], errors="coerce").round(1)
+
+        # Convertir les valeurs en string avec formatage pour garantir l'affichage correct
+        df_saved = df_saved.astype(str)
+
+        # Affichage du tableau mis à jour
         st.subheader("📊 Historique des performances")
         st.table(df_saved)
 
