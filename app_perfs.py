@@ -100,6 +100,7 @@ if os.path.exists(SAVE_FILE):
                         sheet_df.to_excel(writer, sheet_name=sheet_name, index=False)
 
                 st.success("✅ Performance enregistrée avec succès !")
+                st.rerun()  # 🚀 Recharge l'application pour afficher la mise à jour
 
         # Vérifier si le fichier existe avant d'afficher le bouton de téléchargement
         if os.path.exists(SAVE_FILE):
@@ -141,7 +142,7 @@ if os.path.exists(SAVE_FILE):
         for index, row in df_saved.iterrows():
             col1, col2, col3, col4 = st.columns([2, 2, 3, 1])
 
-            col1.write(row["Date"].strftime("%d/%m/%Y") if pd.notna(row["Date"]) else "N/A")
+            col1.write(row["Date"].strftime("%d-%m-%Y") if pd.notna(row["Date"]) else "N/A")
             col2.write(f"{row['Kg']:.1f} Kg" if pd.notna(row["Kg"]) else "N/A")
             # ✅ Séries affichées sous format condensé
             col3.write(f"1️⃣ {row['S1']}  2️⃣ {row['S2']}  3️⃣ {row['S3']}  4️⃣ {row['S4']}")
@@ -149,13 +150,14 @@ if os.path.exists(SAVE_FILE):
             # Bouton de suppression
             if col4.button("❌", key=f"delete_{index}"):
                 df_saved = df_saved.drop(index)
-                st.success(f"Performance du {row['Date'].strftime('%Y-%m-%d')} supprimée.")
+                st.success(f"Performance du {row['Date'].strftime('%d-%m-%Y')} supprimée.")
 
                 # Sauvegarde du fichier Excel mis à jour
                 with pd.ExcelWriter(SAVE_FILE, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
                     df_saved.to_excel(writer, sheet_name=selected_sheet, index=False)
 
                 st.rerun()  # 🚀 Recharge l'application pour afficher la mise à jour
+        # st.table(df_saved)
 
     with tab2:
 
