@@ -9,6 +9,13 @@ SAVE_FILE = "perfs.xlsx"
 # Titre de l'application
 st.title("🏋️Performances Sportives🏋️")
 
+# Zones d'affichage
+status_file = st.empty()
+
+# Vérifier si le fichier sauvegardé existe déjà
+if os.path.exists(SAVE_FILE):
+    status_file.info(f"📂 Chargement du fichier de sauvegarde : `{SAVE_FILE}`")
+
 # Barre latérale pour les fichiers supplémentaires
 st.sidebar.header("🛠️ Outils supplémentaires")
 
@@ -25,13 +32,14 @@ if break_button:
         st.subheader("📑 Données coupures")
         st.table(injuries_df)
 
-# 📌 Si un fichier est importé, on l’enregistre sous "performance.xlsx"
+# 📌 Si un fichier est importé, on l’enregistre localement
 if uploaded_file:
     # Utiliser le même nom de fichier que celui importé
     SAVE_FILE = uploaded_file.name
+    # Sauvegarde du fichier importé pour éviter d’avoir à le réimporter la prochaine fois (mémoire de l'application temporaire)
     with open(SAVE_FILE, "wb") as f:
-        f.write(uploaded_file.getbuffer())  # Écrasement du fichier existant
-    st.success(f"💾 Le fichier {SAVE_FILE} a été chargé et sauvegardé.")
+         f.write(uploaded_file.getbuffer())  # Écrasement du fichier existant
+    status_file.success(f"💾 Le fichier {SAVE_FILE} a été chargé et sauvegardé.")
 
 # 📂 Charger les données depuis le fichier de sauvegarde
 if os.path.exists(SAVE_FILE):
@@ -104,8 +112,6 @@ if os.path.exists(SAVE_FILE):
                 )
 
         # # 📊 Affichage des performances mises à jour
-        # st.subheader("📊 Historique des performances")
-
         # Vérifier si les colonnes existent dans df_saved avant d'appliquer les modifications
         if "Kg" in df_saved.columns:
             df_saved["Kg"] = pd.to_numeric(df_saved["Kg"], errors="coerce").round(1)
