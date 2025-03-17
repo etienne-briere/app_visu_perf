@@ -124,14 +124,47 @@ if os.path.exists(SAVE_FILE):
         # Convertir les valeurs en string avec formatage pour garantir l'affichage correct
         df_saved = df_saved.astype(str)
 
+        # Trier les performances de la plus récente à la plus ancienne
+        df_saved = df_saved.sort_values(by="Date", ascending=False)
+
         # Affichage du tableau mis à jour
         st.subheader("📊 Historique des performances")
-        st.table(df_saved)
+
+        # ✅ Convertir la colonne "Date" en datetime
+        df_saved["Date"] = pd.to_datetime(df_saved["Date"], errors="coerce")
+        df_saved["Kg"] = pd.to_numeric(df["Kg"], errors="coerce")
+
+        # Trier pour afficher les plus récentes en haut
+        df_saved = df_saved.sort_values(by="Date", ascending=False)
+
+        # Afficher le tableau interactif
+        for index, row in df_saved.iterrows():
+            col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 2, 2, 2, 2, 2, 1])
+
+            col1.write(row["Date"].strftime("%Y-%m-%d") if pd.notna(row["Date"]) else "N/A")
+            col2.write(f"{row['Kg']:.1f} Kg")
+            col3.write(float(row["S1"]))
+            col4.write(float(row["S2"]))
+            col5.write(float(row["S3"]))
+            col6.write(float(row["S4"]))
+
+            # Bouton de suppression
+            if col7.button("❌", key=f"delete_{index}"):
+                df_saved = df_saved.drop(index)
+                st.success(f"Performance du {row['Date'].strftime('%Y-%m-%d')} supprimée.")
+
+                # Sauvegarde du fichier Excel mis à jour
+                with pd.ExcelWriter(SAVE_FILE, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+                    df_saved.to_excel(writer, sheet_name=selected_sheet, index=False)
+
+                st.rerun()  # 🚀 Recharge l'application pour afficher la mise à jour
+        # st.table(df_saved)
 
     with tab2:
 
         # 🔄 Charger les données mises à jour
         df = pd.read_excel(SAVE_FILE, sheet_name=selected_sheet, header=0)
+
         ## Conversion en datetime (date) et en numeric (kg)
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
         df["Kg"] = pd.to_numeric(df["Kg"], errors="coerce")
