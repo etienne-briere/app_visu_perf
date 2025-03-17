@@ -139,17 +139,15 @@ if os.path.exists(SAVE_FILE):
 
         # Afficher le tableau interactif
         for index, row in df_saved.iterrows():
-            col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 2, 2, 2, 2, 2, 1])
+            col1, col2, col3, col4 = st.columns([2, 2, 3, 1])
 
-            col1.write(row["Date"].strftime("%Y-%m-%d") if pd.notna(row["Date"]) else "N/A")
-            col2.write(f"{row['Kg']:.1f} Kg")
-            col3.write(float(row["S1"]))
-            col4.write(float(row["S2"]))
-            col5.write(float(row["S3"]))
-            col6.write(float(row["S4"]))
+            col1.write(row["Date"].strftime("%d/%m/%Y") if pd.notna(row["Date"]) else "N/A")
+            col2.write(f"{row['Kg']:.1f} Kg" if pd.notna(row["Kg"]) else "N/A")
+            # ✅ Séries affichées sous format condensé
+            col3.write(f"1️⃣ {row['S1']}  2️⃣ {row['S2']}  3️⃣ {row['S3']}  4️⃣ {row['S4']}")
 
             # Bouton de suppression
-            if col7.button("❌", key=f"delete_{index}"):
+            if col4.button("❌", key=f"delete_{index}"):
                 df_saved = df_saved.drop(index)
                 st.success(f"Performance du {row['Date'].strftime('%Y-%m-%d')} supprimée.")
 
@@ -158,7 +156,6 @@ if os.path.exists(SAVE_FILE):
                     df_saved.to_excel(writer, sheet_name=selected_sheet, index=False)
 
                 st.rerun()  # 🚀 Recharge l'application pour afficher la mise à jour
-        # st.table(df_saved)
 
     with tab2:
 
@@ -244,4 +241,4 @@ else:
     st.warning(f"⚠️ Aucun fichier {SAVE_FILE} trouvé. Télécharge ton fichier Excel.")
 
 # supprimer/modifier un exercice
-#
+# trouver comment faire pour pouvoir partir de zéro
