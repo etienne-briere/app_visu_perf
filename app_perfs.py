@@ -3,24 +3,50 @@ import pandas as pd
 import plotly.graph_objects as go
 import os
 
-# 📌 Nom du fichier de sauvegarde principal
-SAVE_FILE = "perfs.xlsx"
-
 # Titre de l'application
 st.title("🏋️Performances Sportives🏋️")
 
+# 🎯 Saisie du nom de l'utilisateur
+user_name = st.text_input("🔹 Entrez votre nom :", value="", placeholder="Ex : Alex")
+
+# Vérification que le nom est bien renseigné
+if user_name.strip() == "":
+    st.warning("⚠️ Veuillez entrer votre nom pour continuer.")
+    st.stop()  # Stoppe l'exécution tant qu'un nom n'est pas fourni
+
+# 📌 Création du fichier personnalisé de sauvegarde
+SAVE_FILE = f"perfs_{user_name}.xlsx"
+
 # Zones d'affichage
 status_file = st.empty()
-
-# Vérifier si le fichier sauvegardé existe déjà
-if os.path.exists(SAVE_FILE):
-    status_file.info(f"📂 Chargement du fichier de sauvegarde : `{SAVE_FILE}`")
 
 # Barre latérale pour les fichiers supplémentaires
 st.sidebar.header("🛠️ Outils supplémentaires")
 
 # 📂 Téléchargement du fichier Excel Performances
 uploaded_file = st.sidebar.file_uploader("📥 Performances (.xlsx)", type=["xlsx"])
+
+# 📌 Vérifie si un fichier a déjà été sauvegardé
+if "file_saved" not in st.session_state:
+    st.session_state.file_saved = False  # Par défaut, pas encore sauvegardé
+
+# 📌 Si un fichier est importé et pas encore sauvegardé, on l’enregistre
+if uploaded_file and not st.session_state.file_saved:
+    UPLOADED_FILE_NAME = uploaded_file.name
+
+    # Sauvegarde du fichier importé en SAVE_FILE
+    with open(SAVE_FILE, "wb") as f:
+        f.write(uploaded_file.getbuffer())  # Écrasement du fichier existant
+    status_file.success(f"💾 {UPLOADED_FILE_NAME} a été chargé et sauvegardé comme {SAVE_FILE}.")
+
+    # ✅ Marquer que le fichier a été sauvegardé pour éviter une nouvelle sauvegarde après `st.rerun()`
+    st.session_state.file_saved = True
+    st.rerun()  # Recharge l'application pour appliquer les changements
+
+# ✅ Ajouter un bouton pour réinitialiser la sauvegarde et permettre l'importation d'un nouveau fichier
+if st.sidebar.button("🔄 Import ton nouveau fichier"):
+    st.session_state.file_saved = False
+    st.rerun()
 
 # 📂 Téléchargement du fichier blessures
 uploaded_injuries = False
@@ -32,17 +58,12 @@ if break_button:
         st.subheader("📑 Données coupures")
         st.table(injuries_df)
 
-# 📌 Si un fichier est importé, on l’enregistre localement
-if uploaded_file:
-    # Utiliser le même nom de fichier que celui importé
-    SAVE_FILE = uploaded_file.name
-    # Sauvegarde du fichier importé pour éviter d’avoir à le réimporter la prochaine fois (mémoire de l'application temporaire)
-    with open(SAVE_FILE, "wb") as f:
-         f.write(uploaded_file.getbuffer())  # Écrasement du fichier existant
-    status_file.success(f"💾 Le fichier {SAVE_FILE} a été chargé et sauvegardé.")
-
-# 📂 Charger les données depuis le fichier de sauvegarde
+# 📂 Charger les données de SAVE_FILE (déjà sauvegardé ou copie du fichier importé)
 if os.path.exists(SAVE_FILE):
+    if not uploaded_file :
+        status_file.info(f"📂 Fichier de sauvegarde `{SAVE_FILE}` importé automatiquement")
+
+    ## Récupération des feuilles
     sheets = pd.read_excel(SAVE_FILE, sheet_name=None, header=0)
     selected_sheet = st.selectbox("🎯 Sélectionnez un exercice", list(sheets.keys()))
     df = sheets[selected_sheet]
@@ -50,11 +71,10 @@ if os.path.exists(SAVE_FILE):
     # Création du bouton à cocher pour afficher les répétitions
     rep_button = st.sidebar.checkbox("➕ répétitions")
 
-    # 🔄 **Onglets pour saisie & suivi des performances**
+    # 🔄 Onglets pour saisie & suivi des performances**
     tab1, tab2 = st.tabs(["💾 Enregistre tes performances", "📈 Visualise tes performances"])
 
     with tab1:
-
         # 🔄 Charger les performances sauvegardées
         xls = pd.ExcelFile(SAVE_FILE)
         if selected_sheet in xls.sheet_names:
@@ -63,19 +83,19 @@ if os.path.exists(SAVE_FILE):
             df_saved = pd.DataFrame(columns=["Date", "Kg", "S1", "S2", "S3", "S4"])
 
         # 📝 Formulaire pour entrer les performances
-        with st.form(key="new_perf"):
+        with st.form(key="new_perf"): # intérêt de key ???
             col1, col2 = st.columns(2)
             with col1:
                 new_date = st.date_input("🗓️ Date de la séance")
                 new_kg = st.number_input("🏋️‍♂️ Poids (Kg)", min_value=0.0, step=0.5)
 
             with col2:
-                new_s1 = st.number_input("Série 1️⃣", min_value=0, step=1)
-                new_s2 = st.number_input("Série 2️⃣", min_value=0, step=1)
-                new_s3 = st.number_input("Série 3️⃣", min_value=0, step=1)
-                new_s4 = st.number_input("Série 4️⃣", min_value=0, step=1)
+                new_s1 = st.number_input("1️⃣ Série | Répétitions", min_value=0.0, step=0.5)
+                new_s2 = st.number_input("2️⃣ Série | Répétitions", min_value=0.0, step=0.5)
+                new_s3 = st.number_input("3️⃣ Série | Répétitions", min_value=0.0, step=0.5)
+                new_s4 = st.number_input("4️⃣ Série | Répétitions", min_value=0.0, step=0.5)
 
-            submit_button = st.form_submit_button("➕ Enregistrer cette performance")
+            submit_button = st.form_submit_button("💾 Sauvegarder")
 
             if submit_button:
                 # Ajouter la nouvelle performance au DataFrame
@@ -93,27 +113,23 @@ if os.path.exists(SAVE_FILE):
                 df_saved["Date"] = pd.to_datetime(df_saved["Date"])
 
                 # 📂 Sauvegarde du fichier mis à jour
-                with pd.ExcelWriter(SAVE_FILE, engine="openpyxl", mode="w") as writer:
-                    for sheet_name, sheet_df in sheets.items():
-                        if sheet_name == selected_sheet:
-                            sheet_df = df_saved
-                        sheet_df.to_excel(writer, sheet_name=sheet_name, index=False)
+                with pd.ExcelWriter(SAVE_FILE, engine="openpyxl", mode="a", if_sheet_exists="overlay") as writer:
+                    df_saved.to_excel(writer, sheet_name=selected_sheet, index=False)
 
                 st.success("✅ Performance enregistrée avec succès !")
-                st.rerun()  # 🚀 Recharge l'application pour afficher la mise à jour
+                # st.rerun()  # 🚀 Recharge l'application pour afficher la mise à jour
 
-        # Vérifier si le fichier existe avant d'afficher le bouton de téléchargement
-        if os.path.exists(SAVE_FILE):
-            with open(SAVE_FILE, "rb") as file:
-                st.download_button(
-                    label="📥 Télécharger le fichier Excel",
-                    data=file,
-                    file_name=SAVE_FILE,
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+        # Bouton de téléchargement
+        with open(SAVE_FILE, "rb") as file:
+            st.download_button(
+                label=f"📥 Télécharger {SAVE_FILE}",
+                data=file, # indique que le fichier ouvert (SAVE_FILE) est la données à télécharger
+                file_name=SAVE_FILE, # nom du fichier téléchargé
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" # Permet au navigateur de reconnaître qu’il s’agit d’un fichier Excel
+            )
 
         # # 📊 Affichage des performances mises à jour
-        # Vérifier si les colonnes existent dans df_saved avant d'appliquer les modifications
+        # Vérifier si les colonnes existent dans df_saved avant de les convertir en numeric
         if "Kg" in df_saved.columns:
             df_saved["Kg"] = pd.to_numeric(df_saved["Kg"], errors="coerce").round(1)
 
@@ -123,20 +139,17 @@ if os.path.exists(SAVE_FILE):
                 df_saved[col] = pd.to_numeric(df_saved[col], errors="coerce").round(1)
 
         # Convertir les valeurs en string avec formatage pour garantir l'affichage correct
-        df_saved = df_saved.astype(str)
-
-        # Trier les performances de la plus récente à la plus ancienne
-        df_saved = df_saved.sort_values(by="Date", ascending=False)
+        #df_saved = df_saved.astype(str)
 
         # Affichage du tableau mis à jour
         st.subheader("📊 Historique des performances")
 
-        # ✅ Convertir la colonne "Date" en datetime
-        df_saved["Date"] = pd.to_datetime(df_saved["Date"], errors="coerce")
-        df_saved["Kg"] = pd.to_numeric(df["Kg"], errors="coerce")
-
-        # Trier pour afficher les plus récentes en haut
+        # Trier les performances de la plus récente à la plus ancienne
         df_saved = df_saved.sort_values(by="Date", ascending=False)
+
+        # ✅ Convertir la colonne "Date" en datetime
+        #df_saved["Date"] = pd.to_datetime(df_saved["Date"], errors="coerce")
+        #df_saved["Kg"] = pd.to_numeric(df["Kg"], errors="coerce")
 
         # Afficher le tableau interactif
         for index, row in df_saved.iterrows():
@@ -149,15 +162,23 @@ if os.path.exists(SAVE_FILE):
 
             # Bouton de suppression
             if col4.button("❌", key=f"delete_{index}"):
+                # 🔄 Charger à nouveau les anciennes performances pour éviter d'écraser des données
+                xls = pd.ExcelFile(SAVE_FILE)
+                if selected_sheet in xls.sheet_names:
+                    df_saved = pd.read_excel(SAVE_FILE, sheet_name=selected_sheet)
+                else:
+                    df_saved = pd.DataFrame(columns=["Date", "Kg", "S1", "S2", "S3", "S4"])
+
+                # 🚮 Supprimer la ligne
                 df_saved = df_saved.drop(index)
                 st.success(f"Performance du {row['Date'].strftime('%d-%m-%Y')} supprimée.")
 
-                # Sauvegarde du fichier Excel mis à jour
+                # 📂 Sauvegarder la mise à jour
                 with pd.ExcelWriter(SAVE_FILE, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
                     df_saved.to_excel(writer, sheet_name=selected_sheet, index=False)
 
+                # 🚀 Forcer l'actualisation de la page pour voir la modification
                 st.rerun()  # 🚀 Recharge l'application pour afficher la mise à jour
-        # st.table(df_saved)
 
     with tab2:
 
@@ -177,16 +198,16 @@ if os.path.exists(SAVE_FILE):
                 nb_lignes = df.shape[0]
 
                 # Choix du coeff
-                coeff = st.sidebar.number_input("coeff", min_value=0.1, format="%.2f")
+                # coeff = st.sidebar.number_input("coeff", min_value=0.1, format="%.2f")
 
                 for i_ligne in range(nb_lignes):
                     rep_moy = df.iloc[i_ligne, 2:].mean()  # moyenne des dernières colonnes de la ième ligne
 
                     # Ajout du coeff de l'importance des répétitions
-                    rep_moy = rep_moy * coeff
+                    # rep_moy = rep_moy * coeff
 
                     # Ajout des kg soulevés
-                    perf_final = rep_moy + df["Kg"][i_ligne]
+                    perf_final = rep_moy * df["Kg"][i_ligne] * 4 # formule de calcul du tonage
 
                     # Remplacer les valeurs de la colonne Kg par perf_final
                     df["Kg"][i_ligne] = perf_final
@@ -242,5 +263,8 @@ if os.path.exists(SAVE_FILE):
 else:
     st.warning(f"⚠️ Aucun fichier {SAVE_FILE} trouvé. Télécharge ton fichier Excel.")
 
-# supprimer/modifier un exercice
 # trouver comment faire pour pouvoir partir de zéro
+# ajouter une entrée pour entrer le nom de l'utilisateur et ensuite modifier le SAVE_FILE par perfs_{name_utilisateur}
+# changer le delta poids en 0.9+1,2, quand une case gilet leste est actionné
+# ajouter une option pour ajouter des dates (injections)
+# ajouter tonage (kg*nombre de série*moyenne des rep/serie)
