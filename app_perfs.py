@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import os
+import time
 
 # Titre de l'application
 st.title("🏋️Performances Sportives🏋️")
@@ -38,7 +39,7 @@ if uploaded_file and not st.session_state.file_saved:
     with open(SAVE_FILE, "wb") as f:
         f.write(uploaded_file.getbuffer())  # Écrasement du fichier existant
     status_file.success(f"💾 {UPLOADED_FILE_NAME} a été chargé et sauvegardé comme {SAVE_FILE}.")
-
+    time.sleep(2)
     # ✅ Marquer que le fichier a été sauvegardé pour éviter une nouvelle sauvegarde après `st.rerun()`
     st.session_state.file_saved = True
     st.rerun()  # Recharge l'application pour appliquer les changements
